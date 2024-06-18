@@ -14,10 +14,10 @@
 **Github：**  
 将`https://github.com/yeyang52/yenai-plugin` 替换为 `https://github.com/shing-yu/yenai-plugin`
 
-**Gitee：**
+**Gitee：**  
 将`https://gitee.com/yeyang52/yenai-plugin` 替换为 `https://gitee.com/xingyv1024/yenai-plugin`
 
-**星隅的私有Git服务器（IPv6 only）：**
+**星隅的私有Git服务器（IPv6 only）：**  
 将`https://github.com/yeyang52/yenai-plugin` 替换为 `https://git.shingyu.cn:60/shingyu/yenai-plugin`
 
 ## 说明
