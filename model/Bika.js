@@ -4,7 +4,7 @@ import { Config } from "../components/index.js"
 
 export default new (class {
   constructor() {
-    this.domain = "https://api.obfs.dev/api/bika"
+    this.domain = `${Config.bika.hibiAPI}/api/bika`
     this.hearder = {
       headers: {
         "x-image-quality": Config.bika.imageQuality
@@ -28,6 +28,7 @@ export default new (class {
    * @returns {Array<string>} 返回搜索结果信息数组
    */
   async search(keyword, page = 1, type = "advanced", sort = "ld") {
+    sort = Config.bika.searchSort || sort
     let types = [
       {
         alias: [ "关键词", "advanced", "高级" ],
@@ -60,14 +61,14 @@ export default new (class {
       let { title, tags, categories, author, description = "未知", likesCount, thumb, _id, finished } = item
       msg.push(_id)
       msg.push([
-          `${index + 1}、${title}\n`,
-          `作者：${author}\n`,
-          `描述：${_.truncate(description)}\n`,
-          `分类：${categories.join("，")}\n`,
-          `喜欢：${likesCount}\n`,
-          `完结：${finished}\n`,
-          tags ? `tag：${_.truncate(tags.join(","))}\n` : "",
-          await this._requestBikaImg(thumb.fileServer, thumb.path)
+        `${index + 1}、${title}\n`,
+        `作者：${author}\n`,
+        `描述：${_.truncate(description)}\n`,
+        `分类：${categories.join("，")}\n`,
+        `喜欢：${likesCount}\n`,
+        `完结：${finished}\n`,
+        tags ? `tag：${_.truncate(tags.join(","))}\n` : "",
+        Config.bika.hideSearchImg ? "" : await this._requestBikaImg(thumb.fileServer, thumb.path)
       ])
     }
     return msg
