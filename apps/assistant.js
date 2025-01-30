@@ -20,7 +20,7 @@ export class Assistant extends plugin {
           fnc: "SetAvatar"
         },
         {
-          reg: "^#(改|换)昵称",
+          reg: "^#(改|换)(昵|名)称?",
           fnc: "SetNickname"
         },
         {
@@ -52,7 +52,7 @@ export class Assistant extends plugin {
           fnc: "SetGroupAvatar"
         },
         {
-          reg: "^#改群昵称",
+          reg: "^#改群(昵|名)称?",
           fnc: "SetGroupName"
         },
         {
@@ -138,7 +138,7 @@ export class Assistant extends plugin {
    */
   async SetNickname(e) {
     if (!common.checkPermission(e, "master")) return
-    let name = e.msg.replace(/#(改|换)昵称/g, "").trim()
+    let name = e.msg.replace(/#(改|换)(昵|名)称?/g, "").trim()
 
     await this.Bot.setNickname(name)
       .then(() => e.reply("✅ 昵称修改成功"))
@@ -153,10 +153,9 @@ export class Assistant extends plugin {
    * @param e
    */
   async SetGroupCard(e) {
-    if (!common.checkPermission(e, "master")) return
+    if (!common.checkPermission(e, "master", e.at ? "admin" : "all")) return
     let group = ""
     let card = ""
-
     if (e.isPrivate) {
       let msg = e.msg.split(" ")
 
@@ -172,10 +171,7 @@ export class Assistant extends plugin {
       card = e.msg.replace(/#改群名片/g, "").trim()
     }
 
-    if (!card) {
-      return e.reply("❎ 名片不能为空")
-    }
-    this.Bot.pickGroup(group).setCard(this.Bot.uin, card)
+    this.Bot.pickGroup(group).setCard(e.at || this.Bot.uin, card)
       .then(() => e.reply("✅ 群名片修改成功"))
       .catch(err => {
         e.reply("❎ 群名片修改失败")
@@ -260,7 +256,7 @@ export class Assistant extends plugin {
     } else {
       if (!e.member.is_admin && !e.member.is_owner && !e.isMaster) return logger.mark(`${e.logFnc}该群员权限不足`)
       group = e.group_id
-      card = e.msg.replace(/#改群昵称/g, "").trim()
+      card = e.msg.replace(/#改群(昵|名)称?/g, "").trim()
     }
 
     if (!card) return e.reply("❎ 昵称不能为空")
@@ -429,29 +425,31 @@ export class Assistant extends plugin {
   async RecallMsgown(e) {
     const source = await common.takeSourceMsg(e)
     if (!source) return false
-    let target = e.isGroup ? e.group : e.friend
+    let target = e.group ?? e.friend
+    let sender = source.sender.user_id
 
     if (e.isGroup) {
-      // 群聊判断权限
-      if (!common.checkPermission(e, "admin")) {
-        return logger.warn(`${e.logFnc}该群员权限不足`)
-      }
+      /** 群聊判断权限 */
+      if (!common.checkPermission(e, sender == this.Bot.uin ? "all" : "admin")) return logger.warn(`${e.logFnc}该群员权限不足`)
     } else {
-      // 私聊判断是否为Bot消息
-      if (source.sender.user_id != this.Bot.uin) {
+      /** 私聊判断是否为Bot消息 */
+      if (sender != this.Bot.uin) {
         return logger.warn(`${e.logFnc}引用不是Bot消息`)
       }
     }
     if (source.message[0].type === "file" && e.isGroup) {
-      // 删除文件
-      logger.info(`${e.logFnc}执行删除文件`)
+      /** 删除文件 */
+      logger.mark(`${e.logFnc}执行删除文件`)
       await this.Bot.acquireGfs(e.group_id).rm(source.message[0].fid)
     } else {
-      // 撤回消息
-      logger.info(`${e.logFnc}执行撤回消息`)
+      /** 撤回消息 */
+      logger.mark(`${e.logFnc}执行撤回消息`)
       await target.recallMsg(source.message_id)
     }
+
     await sleep(300)
+
+    /** 检验是否撤回成功 */
     let recallcheck = await this.Bot.getMsg(source.message_id)
     if (recallcheck && recallcheck.message_id == source.message_id) {
       let msg
@@ -466,7 +464,8 @@ export class Assistant extends plugin {
       }
       return e.reply(msg, true, { recallMsg: 5 })
     }
-    if (e.isGroup) await e.recall()
+    if (e.isGroup) e.recall()
+    return true
   }
 
   /**
